@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <title>医疗影像标注系统 </title>
+    <link rel="stylesheet" href="/webjars/element-ui/2.15.14/lib/theme-chalk/index.css" />
+    <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<div id="app">
+    <el-container>
+        <el-header class="header">
+            <div class="title">医疗影像辅助分析系统</div>
+        </el-header>
+        <el-main>
+            <el-tabs v-model="activeTab">
+                <el-tab-pane label="患者管理" name="patients">
+                    <div class="panel">
+                        <el-form :model="patientForm" inline>
+                            <el-form-item label="患者编号">
+                                <el-input v-model="patientForm.patientNo" placeholder="必填"></el-input>
+                            </el-form-item>
+                            <el-form-item label="姓名">
+                                <el-input v-model="patientForm.name"></el-input>
+                            </el-form-item>
+                            <el-form-item label="性别">
+                                <el-select v-model="patientForm.gender" placeholder="U">
+                                    <el-option label="男" value="M"></el-option>
+                                    <el-option label="女" value="F"></el-option>
+                                    <el-option label="未知" value="U"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="出生日期">
+                                <el-date-picker v-model="patientForm.dob" type="date" value-format="yyyy-MM-dd"></el-date-picker>
+                            </el-form-item>
+                            <el-form-item label="联系方式">
+                                <el-input v-model="patientForm.contact"></el-input>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="createPatient">新增患者</el-button>
+                            </el-form-item>
+                        </el-form>
+                        <el-input v-model="patientKeyword" placeholder="按编号或姓名搜索" class="search" @input="loadPatients"></el-input>
+                        <el-table :data="patients" stripe>
+                            <el-table-column prop="id" label="ID" width="60"></el-table-column>
+                            <el-table-column prop="patientNo" label="患者编号"></el-table-column>
+                            <el-table-column prop="name" label="姓名"></el-table-column>
+                            <el-table-column prop="gender" label="性别" width="80"></el-table-column>
+                            <el-table-column prop="dob" label="出生日期"></el-table-column>
+                            <el-table-column prop="contact" label="联系方式"></el-table-column>
+                        </el-table>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="影像管理" name="upload">
+                    <div class="panel">
+                        <el-form inline>
+                            <el-form-item label="患者">
+                                <el-select v-model="uploadForm.patientId" placeholder="可选">
+                                    <el-option v-for="p in patients" :key="p.id" :label="p.patientNo + ' - ' + p.name" :value="p.id"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="上传人">
+                                <el-input v-model="uploadForm.uploadedBy" placeholder="可选"></el-input>
+                            </el-form-item>
+                            <el-form-item>
+                                <input type="file" @change="handleFile" />
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="uploadImage">上传</el-button>
+                            </el-form-item>
+                        </el-form>
+                        <el-alert v-if="uploadResult" type="success" :closable="false" title="上传成功"></el-alert>
+
+                        <el-divider></el-divider>
+                        <div>
+                            <el-select v-model="imageMgmtFilterPatientId" placeholder="按患者筛选" style="width: 300px; margin-bottom: 12px" @change="loadImages">
+                                <el-option label="全部" :value="null"></el-option>
+                                <el-option v-for="p in patients" :key="p.id" :label="p.patientNo + ' - ' + p.name" :value="p.id"></el-option>
+                            </el-select>
+                            <el-table :data="images" stripe>
+                                <el-table-column prop="fileName" label="文件名"></el-table-column>
+                                <el-table-column prop="patientName" label="患者" width="180"></el-table-column>
+                                <el-table-column prop="uploadedBy" label="上传人" width="120"></el-table-column>
+                                <el-table-column prop="uploadedAt" label="上传时间" width="180"></el-table-column>
+                                <el-table-column label="操作" width="160">
+                                    <template slot-scope="scope">
+                                        <el-button size="mini" @click="previewImage(scope.row)">预览</el-button>
+                                        <el-button type="danger" size="mini" @click="confirmDelete(scope.row)">删除</el-button>
+                                    </template>
+                                </el-table-column>
+                            </el-table>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="影像标注" name="annotate">
+                    <div class="panel">
+                        <el-row :gutter="12">
+                            <el-col :span="6">
+                                <el-card>
+                                    <div slot="header">影像列表</div>
+                                    <el-select v-model="imageFilterPatientId" placeholder="按患者筛选" @change="loadImages" style="width: 100%">
+                                        <el-option label="全部" :value="null"></el-option>
+                                        <el-option v-for="p in patients" :key="p.id" :label="p.patientNo + ' - ' + p.name" :value="p.id"></el-option>
+                                    </el-select>
+                                    <el-divider></el-divider>
+                                    <el-table :data="images" height="480" @row-click="selectImage">
+                                        <el-table-column prop="fileName" label="文件名"></el-table-column>
+                                    </el-table>
+                                </el-card>
+                            </el-col>
+                            <el-col :span="18">
+                                <el-card>
+                                    <div slot="header" class="annotate-header">
+                                        <div>标注画布</div>
+                                        <div class="toolbar">
+                                            <el-input v-model="annotator" placeholder="标注人"></el-input>
+                                            <el-select v-model="shapeType" placeholder="形状">
+                                                <el-option label="矩形" value="rectangle"></el-option>
+                                                <el-option label="多边形" value="polygon"></el-option>
+                                                <el-option label="点" value="point"></el-option>
+                                            </el-select>
+                                            <el-button @click="clearShapes">清空</el-button>
+                                            <el-button type="primary" @click="saveAnnotation">保存标注</el-button>
+                                        </div>
+                                    </div>
+                                    <div class="canvas-wrapper">
+                                        <img v-if="selectedImage" :src="imagePreviewUrl" @load="initCanvas" class="hidden-img" />
+                                        <canvas id="canvas" width="900" height="600"></canvas>
+                                    </div>
+                                </el-card>
+                            </el-col>
+                        </el-row>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="标注统计" name="stats">
+                    <div class="panel">
+                        <el-form inline>
+                            <el-form-item label="影像ID">
+                                <el-input v-model="statsForm.imageId" placeholder="可选"></el-input>
+                            </el-form-item>
+                            <el-form-item label="患者ID">
+                                <el-input v-model="statsForm.patientId" placeholder="可选"></el-input>
+                            </el-form-item>
+                            <el-form-item label="时间从">
+                                <el-date-picker v-model="statsForm.from" type="date" value-format="yyyy-MM-dd"></el-date-picker>
+                            </el-form-item>
+                            <el-form-item label="时间到">
+                                <el-date-picker v-model="statsForm.to" type="date" value-format="yyyy-MM-dd"></el-date-picker>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="loadStats">查询</el-button>
+                                <el-button @click="exportCsv">导出 CSV</el-button>
+                            </el-form-item>
+                        </el-form>
+                        <el-row :gutter="12">
+                            <el-col :span="12">
+                                <el-card>
+                                    <div slot="header">按标签统计</div>
+                                    <el-table :data="labelStats">
+                                        <el-table-column prop="label" label="标签"></el-table-column>
+                                        <el-table-column prop="count" label="数量"></el-table-column>
+                                    </el-table>
+                                </el-card>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-card>
+                                    <div slot="header">按标注人统计</div>
+                                    <el-table :data="annotatorStats">
+                                        <el-table-column prop="annotator" label="标注人"></el-table-column>
+                                        <el-table-column prop="count" label="次数"></el-table-column>
+                                    </el-table>
+                                </el-card>
+                            </el-col>
+                        </el-row>
+                    </div>
+                </el-tab-pane>
+            </el-tabs>
+        </el-main>
+    </el-container>
+</div>
+
+<script src="/webjars/vue/2.6.14/dist/vue.min.js"></script>
+<script src="/webjars/element-ui/2.15.14/lib/index.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
