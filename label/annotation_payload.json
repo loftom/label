@@ -1,0 +1,5 @@
+{
+  "imageId": 4,
+  "annotator": "tester2",
+  "jsonBody": "{\"version\":\"5.0.1\",\"shapes\":[{\"label\":\"testrect\",\"points\":[[10,10],[100,100]],\"shape_type\":\"rectangle\",\"flags\":{}}],\"imagePath\":\"sample.png\",\"imageHeight\":100,\"imageWidth\":100}"
+}

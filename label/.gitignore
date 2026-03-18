@@ -1,0 +1,22 @@
+# Maven
+/target/
+
+# IDEs
+/.idea/
+*.iml
+/.vscode/
+
+# Python venv
+.venv/
+
+# Uploads
+/uploads/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# Java
+*.class

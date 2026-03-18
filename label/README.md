@@ -1,33 +1,41 @@
 # 医疗影像辅助分析系统（作业版）
 
-本项目提供两个基础功能：
-1. 身体部位关键点识别（手动点击记录）
-2. 所需部位框选（鼠标拖拽绘制矩形）
+轻量级医疗影像标注系统，包含：患者信息管理、影像上传与存储、影像浏览与标注（矩形/多边形/点，LabelMe JSON）、标注统计与 CSV 导出。
 
-## 功能说明
-- 加载影像后可在两种模式间切换：
-  - 关键点模式：左键点击影像添加关键点
-  - 框选模式：按下并拖拽绘制矩形框
-- 点击“保存标注”导出 JSON 文件
-- 新增：创建关键点/框选时可自定义名称
+## 功能概览
+- 患者管理：创建与查询
+- 影像上传：单文件上传，支持 DICOM 元数据解析
+- 影像标注：前端 Canvas 标注，保存 LabelMe JSON
+- 统计分析：按标签/影像/患者/标注人计数，支持时间区间，CSV 导出
 
-## 运行说明
-- 需要 JDK 17 与 Maven
-- 运行后使用界面按钮加载影像并进行标注
+## 技术栈
+- 后端：Java 17，Spring Boot，MyBatis-Plus
+- 数据库：MySQL
+- 前端：Vue2 + Element-UI（CDN）
+- 构建：Maven
 
-## 虚拟环境
-本项目主要为 Java 桌面程序。若需要运行后续的辅助脚本（例如批量处理、统计），可创建 Python 虚拟环境用于扩展：
-- 建议在项目根目录创建 .venv
+## 数据库初始化
+执行 [schema.sql](schema.sql) 创建数据库与表。
 
-## 输出格式示例
-```json
-{
-  "imagePath": "D:/.../image.png",
-  "keypoints": [
-    {"id": 1, "x": 120, "y": 240}
-  ],
-  "boxes": [
-    {"id": 1, "x": 80, "y": 100, "width": 200, "height": 150}
-  ]
-}
+## 配置说明
+在 [src/main/resources/application.yml](src/main/resources/application.yml) 中修改数据库账号与密码。
+
+## 运行方式
+```bash
+mvn -q -DskipTests spring-boot:run
 ```
+启动后打开：
+```
+http://localhost:8080
+```
+
+## 核心接口
+- POST /api/patients
+- GET /api/patients?keyword=
+- POST /api/images/upload
+- GET /api/images/{id}/preview
+- GET /api/images?patientId=&page=&size=
+- POST /api/annotations
+- GET /api/annotations?imageId=&version=
+- GET /api/stats/labels?imageId=&patientId=&from=&to=
+- GET /api/stats/export?imageId=&patientId=&from=&to=
