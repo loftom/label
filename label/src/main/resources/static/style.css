@@ -1,0 +1,44 @@
+body {
+  margin: 0;
+  background: #f5f7fb;
+}
+.header {
+  background: #1f2d3d;
+  color: #fff;
+  display: flex;
+  align-items: center;
+}
+.title {
+  font-size: 18px;
+  font-weight: 600;
+}
+.panel {
+  margin-top: 12px;
+}
+.search {
+  margin: 12px 0;
+  max-width: 320px;
+}
+.annotate-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.canvas-wrapper {
+  background: #0b0f14;
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+}
+.hidden-img {
+  display: none;
+}
+canvas {
+  border: 1px solid #333;
+  background: #000;
+}
